@@ -1,0 +1,9 @@
+CPTC (https://github.com/nakidai/cptc)
+--------------------------------------
+PetTheCord but rewritten in the C cuz some people was annoying me about that a
+lot.
+
+Paths:
+/           Show this text
+/<UID>.*    Return a gif that pets given UID
+             - It will return 403 with some explanation in entity on error.
