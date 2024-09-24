@@ -9,6 +9,7 @@
 
 
 static const char *ok               = "HTTP/1.0 200 OK\r\n";
+static const char *notfound         = "HTTP/1.0 404 Not found\r\n";
 static const char *not_implemented  = "HTTP/1.0 501 Not implemented\r\n";
 
 static const char *content_length   = "Content-Length: %d\r\n";
@@ -39,8 +40,6 @@ void CPTC_requestHandler(int fd)
         goto end;
     }
 
-    printf("Got request!\n%s\n", buffer);
-
     method = buffer[0];
     if (method != CPTC_GET && method != CPTC_HEAD)
     {
@@ -49,10 +48,9 @@ void CPTC_requestHandler(int fd)
     }
 
     path = strchr(buffer, ' ') + 1;
-    for (int i = 0; i < strchr(path, ' ') - path; ++i)
-        putchar(*(path + i));
-    putchar('\n');
-    if (strchr(path, ' ') - path == 1)
+    *strchr(path, ' ') = '\0';
+    puts(path);
+    if (strlen(path) == 1)
     {
         send(fd, ok, strlen(ok), 0);
         char *length = malloc(sizeof(*length) * 32);
@@ -64,6 +62,8 @@ void CPTC_requestHandler(int fd)
         free(length);
         goto end;
     }
+
+    send(fd, notfound, strlen(notfound), 0);
 
 end:
     free(buffer);
