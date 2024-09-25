@@ -130,8 +130,10 @@ void CPTC_requestHandler(int fd)
             chbuf = ch;
             send(fd, &chbuf, 1, 0);
         }
-
         fclose(fp);
+        remove(in);
+        remove(filenamebuf);
+
         free(in);
         free(length);
     }
