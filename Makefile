@@ -13,6 +13,7 @@ RM = rm -f
 all: cptc
 
 cptc: $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
 	$(RM) cptc *.o
