@@ -1,11 +1,15 @@
+#include "cptc.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#include "cptc.h"
+#include <curl/curl.h>
+#include <curl/easy.h>
 
 
 #define error(text, status) \
@@ -22,8 +26,12 @@ void CPTC(const char *ip, in_port_t port)
     socklen_t peer_size;
     int fd, peerfd;
 
+    curl_easy_init();
+
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         error("socket()", 1);
+    if ((setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int))) < 0)
+        error("setsockopt()", 1);
 
     addr = (struct sockaddr_in)
     {

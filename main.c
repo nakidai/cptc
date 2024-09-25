@@ -1,7 +1,7 @@
+#include "cptc.h"
+
 #include <fcntl.h>
 #include <unistd.h>
-
-#include "cptc.h"
 
 
 int main(void)
