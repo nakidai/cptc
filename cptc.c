@@ -56,6 +56,9 @@ void CPTC(const char *ip, in_port_t port)
         }
         printf("Connection from %s:%u!\n", inet_ntoa(peer.sin_addr), peer.sin_port);
 
+        /*
+         * TODO: Make it multithreaded
+         */
         CPTC_requestHandler(peerfd);
         close(peerfd);
     }
