@@ -11,6 +11,7 @@ enum CPTC_Method
 };
 
 extern const char *CPTC_token;
+extern const char *CPTC_root;
 
 void CPTC(const char *address, in_port_t port);
 void CPTC_requestHandler(int fd);

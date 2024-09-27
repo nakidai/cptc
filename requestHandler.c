@@ -27,16 +27,6 @@ static const char *image_gif        = "Content-Type: image/gif\r\n";
 
 static const char *end              = "\r\n";
 
-static const char *root = "\
-CPTC (https://github.com/nakidai/cptc)\n\
---------------------------------------\n\
-PetTheCord but rewritten in the C cuz some people was annoying me about that a\n\
-lot.\n\
-\n\
-Paths:\n\
-/           Show this text\n\
-/<UID>.*    Return a gif that pets given UID\n";
-
 static bool isnumber(const char *s)
 {
     for (const char *cp = s; *cp != '\0' && *cp != '.'; ++cp)
@@ -86,13 +76,13 @@ void CPTC_requestHandler(int fd)
     if (strlen(path) == 1)
     {
         char *length = malloc(sizeof(*length) * 32);
-        snprintf(length, 32, content_length, strlen(root));
+        snprintf(length, 32, content_length, strlen(CPTC_root));
         strcpy(response, ok);
         strcat(response, text_plain);
         strcat(response, length);
         strcat(response, end);
         send(fd, response, strlen(response), 0);
-        send(fd, root, strlen(root), 0);
+        send(fd, CPTC_root, strlen(CPTC_root), 0);
         free(length);
         return;
     }
