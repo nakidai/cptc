@@ -28,4 +28,4 @@ clean:
 
 cptc: $(OBJS)
 
-.PHONY: all utils clean
+.PHONY: all clean
