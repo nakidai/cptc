@@ -1,3 +1,5 @@
-This program depends on the cpetpet* library that depends on the imagemagick.
+Building is performed through a Makefile
 
-* https://github.com/nakidai/cpetpet
+CPTC depends on:
+- cpetpet: https://github.com/nakidai/cpetpet
+- curl: https://curl.se/
