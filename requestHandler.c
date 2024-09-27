@@ -103,9 +103,8 @@ void CPTC_requestHandler(int fd)
             strcpy(response, "HTTP/1.0 500 Internal server error\r\n");
             strcat(response, "\r\n");
             send(fd, response, strlen(response), 0);
-            free(in);
-            free(length);
-            return;
+
+            goto err_gif;
         }
         fseek(fp, 0, SEEK_END);
         snprintf(length, 32, "Content-Lnegth: %ld\r\n", ftell(fp));
@@ -127,7 +126,7 @@ void CPTC_requestHandler(int fd)
                     if (send(fd, response, sizeof(response), 0) < 0)
                     {
                         perror("send()");
-                        goto err_send;
+                        goto err_gif_fp;
                     }
                     responseadd = response;
                 }
@@ -135,9 +134,10 @@ void CPTC_requestHandler(int fd)
             send(fd, response, responseadd - response, 0);
         }
 
-err_send:
+err_gif_fp:
         fclose(fp);
 
+err_gif:
         remove(in);
         remove(filenamebuf);
 
