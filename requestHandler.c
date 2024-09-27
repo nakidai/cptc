@@ -132,7 +132,10 @@ void CPTC_requestHandler(int fd)
             if (responseadd == response + sizeof(response))
             {
                 if (send(fd, response, sizeof(response), 0) < 0)
+                {
+                    perror("send()");
                     goto err_send;
+                }
                 responseadd = response;
             }
         }
