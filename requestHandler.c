@@ -72,7 +72,8 @@ void CPTC_requestHandler(int fd)
         strcat(response, length);
         strcat(response, "\r\n");
         send(fd, response, strlen(response), 0);
-        send(fd, CPTC_root, strlen(CPTC_root), 0);
+        if (method == CPTC_GET)
+            send(fd, CPTC_root, strlen(CPTC_root), 0);
         free(length);
         return;
     }
@@ -115,21 +116,24 @@ void CPTC_requestHandler(int fd)
         strcat(response, length);
         strcat(response, "\r\n");
         send(fd, response, strlen(response), 0);
-        responseadd = response;
-        while ((ch = getc(fp)) >= 0)
+        if (method == CPTC_GET)
         {
-            *responseadd++ = ch;
-            if (responseadd == response + sizeof(response))
+            responseadd = response;
+            while ((ch = getc(fp)) >= 0)
             {
-                if (send(fd, response, sizeof(response), 0) < 0)
+                *responseadd++ = ch;
+                if (responseadd == response + sizeof(response))
                 {
-                    perror("send()");
-                    goto err_send;
+                    if (send(fd, response, sizeof(response), 0) < 0)
+                    {
+                        perror("send()");
+                        goto err_send;
+                    }
+                    responseadd = response;
                 }
-                responseadd = response;
             }
+            send(fd, response, responseadd - response, 0);
         }
-        send(fd, response, responseadd - response, 0);
 
 err_send:
         fclose(fp);
