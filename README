@@ -3,6 +3,9 @@ CPTC (https://github.com/nakidai/cptc)
 PetTheCord but rewritten in the C cuz some people were annoying me about that a
 lot.
 
+Before run you should set CPTC_TOKEN to some discord's user or bot token, so it
+will be possible to request avatar location.
+
 Paths:
 /           Show this text
 /<UID>.*    Return a gif that pets given UID
