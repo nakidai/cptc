@@ -58,9 +58,13 @@ void CPTC_requestHandler(int fd)
     enum CPTC_Method method;
     int ch;
     char *path, chbuf;
-    char buffer[512], filenamebuf[64];
-    ssize_t received = recv(fd, buffer, sizeof(buffer), 0);
+    char request[512];
+    char filenamebuf[64];
+    char response[512], *responseadd = response;
+    ssize_t received = recv(fd, request, sizeof(request), 0);
     FILE *fp;
+
+    memset(response, 0, sizeof(response));
 
     if (received == -1)
     {
@@ -68,14 +72,14 @@ void CPTC_requestHandler(int fd)
         return;
     }
 
-    method = buffer[0];
+    method = request[0];
     if (method != CPTC_GET && method != CPTC_HEAD)
     {
         send(fd, not_implemented, strlen(not_implemented), 0);
         return;
     }
 
-    path = strchr(buffer, ' ') + 1;
+    path = strchr(request, ' ') + 1;
     *strchr(path, ' ') = '\0';
     puts(path);
 
@@ -83,10 +87,11 @@ void CPTC_requestHandler(int fd)
     {
         char *length = malloc(sizeof(*length) * 32);
         snprintf(length, 32, content_length, strlen(root));
-        send(fd, ok, strlen(ok), 0);
-        send(fd, text_plain, strlen(text_plain), 0);
-        send(fd, length, strlen(length), 0);
-        send(fd, end, strlen(end), 0);
+        strcpy(response, ok);
+        strcat(response, text_plain);
+        strcat(response, length);
+        strcat(response, end);
+        send(fd, response, strlen(response), 0);
         send(fd, root, strlen(root), 0);
         free(length);
         return;
@@ -101,7 +106,9 @@ void CPTC_requestHandler(int fd)
         char *in = CPTC_downloadAvatar(atoll(path + 1), filenamebuf);
         if (!in)
         {
-            send(fd, forbidden, strlen(forbidden), 0);
+            strcpy(response, forbidden);
+            strcat(response, end);
+            send(fd, response, strlen(response), 0);
             return;
         }
         generate_filename(filenamebuf, sizeof(filenamebuf), "gif");
@@ -112,7 +119,9 @@ void CPTC_requestHandler(int fd)
         if (!fp)
         {
             perror("fopen()");
-            send(fd, intserverror, strlen(intserverror), 0);
+            strcpy(response, intserverror);
+            strcat(response, end);
+            send(fd, response, strlen(response), 0);
             free(in);
             free(length);
             return;
@@ -121,22 +130,36 @@ void CPTC_requestHandler(int fd)
         snprintf(length, 32, content_length, ftell(fp));
         fseek(fp, 0, SEEK_SET);
 
-        send(fd, ok, strlen(ok), 0);
-        send(fd, image_gif, strlen(image_gif), 0);
-        send(fd, length, strlen(length), 0);
-        send(fd, end, strlen(end), 0);
+        strcpy(response, ok);
+        strcat(response, image_gif);
+        strcat(response, length);
+        strcat(response, end);
+        send(fd, response, strlen(response), 0);
+        responseadd = response;
         while ((ch = getc(fp)) >= 0)
         {
-            chbuf = ch;
-            send(fd, &chbuf, 1, 0);
+            *responseadd++ = ch;
+            if (responseadd == response + sizeof(response))
+            {
+                if (send(fd, response, sizeof(response), 0) < 0)
+                    goto err_send;
+                responseadd = response;
+            }
         }
+        send(fd, response, responseadd - response, 0);
+
+err_send:
         fclose(fp);
+
         remove(in);
         remove(filenamebuf);
 
         free(in);
         free(length);
+        return;
     }
 
-    send(fd, notfound, strlen(notfound), 0);
+    strcpy(response, notfound);
+    strcat(response, end);
+    send(fd, response, strlen(response), 0);
 }
