@@ -15,18 +15,6 @@
 #include <cpetpet.h>
 
 
-static const char *ok               = "HTTP/1.0 200 OK\r\n";
-static const char *notfound         = "HTTP/1.0 404 Not found\r\n";
-static const char *forbidden        = "HTTP/1.0 403 Forbidden\r\n";
-static const char *intserverror     = "HTTP/1.0 500 Internal server error\r\n";
-static const char *not_implemented  = "HTTP/1.0 501 Not implemented\r\n";
-
-static const char *content_length   = "Content-Length: %d\r\n";
-static const char *text_plain       = "Content-Type: text/plain\r\n";
-static const char *image_gif        = "Content-Type: image/gif\r\n";
-
-static const char *end              = "\r\n";
-
 static bool isnumber(const char *s)
 {
     for (const char *cp = s; *cp != '\0' && *cp != '.'; ++cp)
@@ -65,7 +53,9 @@ void CPTC_requestHandler(int fd)
     method = request[0];
     if (method != CPTC_GET && method != CPTC_HEAD)
     {
-        send(fd, not_implemented, strlen(not_implemented), 0);
+        strcpy(response, "HTTP/1.0 501 Not implemented\r\n");
+        strcat(response, "\r\n");
+        send(fd, response, strlen(response), 0);
         return;
     }
 
@@ -76,11 +66,11 @@ void CPTC_requestHandler(int fd)
     if (strlen(path) == 1)
     {
         char *length = malloc(sizeof(*length) * 32);
-        snprintf(length, 32, content_length, strlen(CPTC_root));
-        strcpy(response, ok);
-        strcat(response, text_plain);
+        snprintf(length, 32, "Content-Length: %ld\r\n", strlen(CPTC_root));
+        strcpy(response, "HTTP/1.0 200 OK\r\n");
+        strcat(response, "Content-Type: text/plain\r\n");
         strcat(response, length);
-        strcat(response, end);
+        strcat(response, "\r\n");
         send(fd, response, strlen(response), 0);
         send(fd, CPTC_root, strlen(CPTC_root), 0);
         free(length);
@@ -96,8 +86,8 @@ void CPTC_requestHandler(int fd)
         char *in = CPTC_downloadAvatar(atoll(path + 1), filenamebuf);
         if (!in)
         {
-            strcpy(response, forbidden);
-            strcat(response, end);
+            strcpy(response, "HTTP/1.0 403 Forbidden\r\n");
+            strcat(response, "\r\n");
             send(fd, response, strlen(response), 0);
             return;
         }
@@ -109,21 +99,21 @@ void CPTC_requestHandler(int fd)
         if (!fp)
         {
             perror("fopen()");
-            strcpy(response, intserverror);
-            strcat(response, end);
+            strcpy(response, "HTTP/1.0 500 Internal server error\r\n");
+            strcat(response, "\r\n");
             send(fd, response, strlen(response), 0);
             free(in);
             free(length);
             return;
         }
         fseek(fp, 0, SEEK_END);
-        snprintf(length, 32, content_length, ftell(fp));
+        snprintf(length, 32, "Content-Lnegth: %ld\r\n", ftell(fp));
         fseek(fp, 0, SEEK_SET);
 
-        strcpy(response, ok);
-        strcat(response, image_gif);
+        strcpy(response, "HTTP/1.0 200 OK\r\n");
+        strcat(response, "Content-Type: image/gif\r\n");
         strcat(response, length);
-        strcat(response, end);
+        strcat(response, "\r\n");
         send(fd, response, strlen(response), 0);
         responseadd = response;
         while ((ch = getc(fp)) >= 0)
@@ -152,7 +142,7 @@ err_send:
         return;
     }
 
-    strcpy(response, notfound);
-    strcat(response, end);
+    strcpy(response, "HTTP/1.0 404 Not found");
+    strcat(response, "\r\n");
     send(fd, response, strlen(response), 0);
 }
