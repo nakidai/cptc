@@ -74,8 +74,10 @@ int main(int argc, char **argv)
             break;
         case 'h':
             usage(argv[0], true);
+            /* NOTREACHED */
         default:
             usage(argv[0], false);
+            /* NOTREACHED */
         }
     }
 
