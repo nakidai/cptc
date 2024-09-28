@@ -7,8 +7,9 @@ OBJS += root.o
 CFLAGS += $(shell curl-config --cflags)
 CFLAGS += -std=c11
 
-LDFLAGS += $(shell curl-config --libs)
-LDFLAGS += -lcpetpet
+LDLIBS += $(shell curl-config --libs)
+LDLIBS += -lcpetpet
+LDLIBS += -lcurl
 RM = rm -f
 
 all: cptc
@@ -20,7 +21,7 @@ root.c: utils/convert README
 	echo "const char *CPTC_root = \"$$(cat README | utils/convert)\";" > $@
 
 cptc: $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $@
 
 clean:
 	$(RM) cptc *.o
