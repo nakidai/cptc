@@ -23,15 +23,15 @@ static bool isnumber(const char *s)
     return true;
 }
 
-static char *generate_filename(char *buf, size_t size, const char *ext)
+static char *generate_filename(char *buf, size_t size, const char *ext, int n)
 {
     struct timespec tp;
     clock_gettime(CLOCK_REALTIME, &tp);
-    snprintf(buf, size, "/tmp/%lld.%s", tp.tv_sec * 1000000000LL + tp.tv_nsec, ext);
+    snprintf(buf, size, "/tmp/%d-%lld.%s", n, tp.tv_sec * 1000000000LL + tp.tv_nsec, ext);
     return buf;
 }
 
-void CPTC_requestHandler(int fd)
+void CPTC_requestHandler(int fd, int n)
 {
     enum CPTC_Method method;
     int ch;
@@ -83,7 +83,7 @@ void CPTC_requestHandler(int fd)
         char *length = malloc(sizeof(*length) * 32);
 
         *strchr(path, '.') = '\0';
-        generate_filename(filenamebuf, sizeof(filenamebuf), "png");
+        generate_filename(filenamebuf, sizeof(filenamebuf), "png", n);
         char *in = CPTC_downloadAvatar(atoll(path + 1), filenamebuf);
         if (!in)
         {
@@ -92,7 +92,7 @@ void CPTC_requestHandler(int fd)
             send(fd, response, strlen(response), 0);
             return;
         }
-        generate_filename(filenamebuf, sizeof(filenamebuf), "gif");
+        generate_filename(filenamebuf, sizeof(filenamebuf), "gif", n);
         CPetPet(in, filenamebuf, 2);
         printf("From %s to %s\n", in, filenamebuf);
 
