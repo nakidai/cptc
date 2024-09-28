@@ -1,15 +1,15 @@
 OBJS += cptc.o
+OBJS += downloadAvatar.o
 OBJS += main.o
 OBJS += requestHandler.o
-OBJS += downloadAvatar.o
 OBJS += root.o
 
 CFLAGS += $(shell curl-config --cflags)
 CFLAGS += -std=c11
 
 LDLIBS += $(shell curl-config --libs)
-LDLIBS += -lcpetpet
 LDLIBS += -lcurl
+LDLIBS += -lcpetpet
 RM = rm -f
 
 all: cptc
