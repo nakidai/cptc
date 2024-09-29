@@ -24,7 +24,7 @@ cptc: $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $@
 
 clean:
-	$(RM) cptc *.o
+	$(RM) cptc root.c *.o
 	make -C utils clean
 
 cptc: $(OBJS)
