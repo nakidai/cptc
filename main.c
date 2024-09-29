@@ -17,7 +17,7 @@ const char *CPTC_token;
 
 static struct option long_options[] =
 {
-    {"help", 1, NULL, 'h'},
+    {"help", 0, NULL, 'h'},
     {"host", 1, NULL, 'i'},
     {"port", 1, NULL, 'p'},
     {0}
