@@ -17,9 +17,9 @@ const char *CPTC_token;
 
 static struct option long_options[] =
 {
-    {"help", no_argument, NULL, 'h'},
-    {"host", no_argument, NULL, 'i'},
-    {"port", no_argument, NULL, 'p'},
+    {"help", 1, NULL, 'h'},
+    {"host", 1, NULL, 'i'},
+    {"port", 1, NULL, 'p'},
     {0}
 };
 
@@ -56,7 +56,6 @@ int main(int argc, char **argv)
     int port = 8080;
     int ch;
 
-    CPTC_token = getenv("CPTC_TOKEN");
     while ((ch = getopt_long(argc, argv, "hi:p:", long_options, NULL)) != EOF)
     {
         switch (ch)
@@ -79,6 +78,12 @@ int main(int argc, char **argv)
             usage(argv[0], false);
             /* NOTREACHED */
         }
+    }
+    CPTC_token = getenv("CPTC_TOKEN");
+    if (!CPTC_token)
+    {
+        fprintf(stderr, "%s: CPTC_TOKEN is not set\n", argv[0]);
+        usage(argv[0], false);
     }
 
     CPTC(address, port);
