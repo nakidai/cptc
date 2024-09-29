@@ -28,13 +28,15 @@ noreturn void usage(char *name, bool full)
     fprintf(
         full ? stdout : stderr,
         full ?
-            "usage: %s [-h] [-i/--host IP] [-p/--port PORT]\n"
+            "usage: env CPTC_TOKEN=TOKEN %s [-h] [-i/--host IP] [-p/--port PORT]\n"
             "Also requires CPTC_TOKEN environment variable set to some discord\n"
             "bot's token\n\n"
             "Options:\n"
-            "  -h, --help       show this help message and quit\n"
-            "  -i, --host IP    set bind address to IP )default: 127.0.0.1)\n"
-            "  -p, --port PORT  set bind port to PORT (default: 8080)\n"
+            "  -h, --help        show this help message and quit\n"
+            "  -i, --host IP     set bind address to IP )default: 127.0.0.1)\n"
+            "  -p, --port PORT   set bind port to PORT (default: 8080)\n"
+            "Environment variables:\n"
+            "  CPTC_TOKEN=TOKEN  Discord bot's TOKEN\n"
         :
             "Try '%s --help' for more information\n",
         name
