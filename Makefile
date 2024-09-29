@@ -14,7 +14,7 @@ RM = rm -f
 
 all: cptc
 
-utils/%:
+utils/convert:
 	make -C utils
 
 root.c: utils/convert README
