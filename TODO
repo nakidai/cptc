@@ -1,0 +1,10 @@
+GIF caching
+    Most of the time `cptc` consumes by downloading avatar and generating gifs.
+    It could be fixed by using some reverse proxy that has caching enabled, but
+    there's a smarter way to do caching.
+
+    Instead of watching for time of avatar downloading, `cptc` should look at
+    the avatar hash which is got on the first request to the discord (about
+    getting info about the user). If avatar hash has changed - it means that
+    user changed it, and so `cptc` should redownload avatar and regenerate gif.
+    If there's already a generated gif, `cptc` should return that one.
