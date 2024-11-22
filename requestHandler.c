@@ -104,7 +104,7 @@ void CPTC_requestHandler(int fd, int n)
             strcat(response, "\r\n");
             send(fd, response, strlen(response), 0);
 
-            goto err_gif;
+            goto gif_end;
         }
         fseek(fp, 0, SEEK_END);
         snprintf(length, 32, "Content-Lnegth: %ld\r\n", ftell(fp));
@@ -126,7 +126,7 @@ void CPTC_requestHandler(int fd, int n)
                     if (send(fd, response, sizeof(response), 0) < 0)
                     {
                         perror("send()");
-                        goto err_gif_fp;
+                        goto gif_end;
                     }
                     responseadd = response;
                 }
@@ -134,10 +134,10 @@ void CPTC_requestHandler(int fd, int n)
             send(fd, response, responseadd - response, 0);
         }
 
-err_gif_fp:
-        fclose(fp);
+gif_end:
+        if (fp)
+            fclose(fp);
 
-err_gif:
         remove(in);
         remove(filenamebuf);
 
