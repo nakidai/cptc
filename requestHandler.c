@@ -13,6 +13,7 @@
 #include <sys/types.h>
 
 #include <cpetpet.h>
+#include <libhttpc.h>
 
 
 static bool isnumber(const char *s)
@@ -33,16 +34,16 @@ static char *generate_filename(char *buf, size_t size, const char *ext, int n)
 
 void CPTC_requestHandler(int fd, int n)
 {
-    enum CPTC_Method method;
     int ch;
-    char *path, chbuf;
-    char request[512];
+    char chbuf;
+    char raw_request[512];
     char filenamebuf[64];
-    char response[512], *responseadd = response;
-    ssize_t received = recv(fd, request, sizeof(request), 0);
+    char raw_response[512], *responseadd = raw_response;
+    ssize_t received = recv(fd, raw_request, sizeof(raw_request), 0);
     FILE *fp;
 
-    memset(response, 0, sizeof(response));
+    enum LibHTTPC_Method method;
+    struct LibHTTPC_Request request = {0};
 
     if (received == -1)
     {
@@ -50,46 +51,65 @@ void CPTC_requestHandler(int fd, int n)
         return;
     }
 
-    method = request[0];
-    if (method != CPTC_GET && method != CPTC_HEAD)
+    LibHTTPC_loadRequest(&request, raw_request);
+
+    method = LibHTTPC_loadMethod(request.method);
+    if (method != LibHTTPC_Method_GET && method != LibHTTPC_Method_HEAD)
     {
-        strcpy(response, "HTTP/1.0 501 Not implemented\r\n");
-        strcat(response, "\r\n");
-        send(fd, response, strlen(response), 0);
+        LibHTTPC_dumpResponse(
+            &(struct LibHTTPC_Response){.status = LibHTTPC_Status_NOT_IMPLEMENTED},
+            raw_response,
+            sizeof(raw_response)
+        );
+        send(fd, raw_response, strlen(raw_response), 0);
         return;
     }
 
-    path = strchr(request, ' ') + 1;
-    *strchr(path, ' ') = '\0';
-    puts(path);
-
-    if (strlen(path) == 1)
+    if (strlen(request.uri) == 1)
     {
-        char *length = malloc(sizeof(*length) * 32);
-        snprintf(length, 32, "Content-Length: %ld\r\n", strlen(CPTC_root));
-        strcpy(response, "HTTP/1.0 200 OK\r\n");
-        strcat(response, "Content-Type: text/plain\r\n");
-        strcat(response, length);
-        strcat(response, "\r\n");
-        send(fd, response, strlen(response), 0);
-        if (method == CPTC_GET)
-            send(fd, CPTC_root, strlen(CPTC_root), 0);
-        free(length);
+        char length[20];
+        snprintf(length, sizeof(length), "%ld", strlen(CPTC_root));
+
+        LibHTTPC_dumpResponse(
+            &(struct LibHTTPC_Response)
+            {
+                .headers = (struct LibHTTPC_Header[])
+                {
+                    {
+                        LibHTTPC_dumpHeader(LibHTTPC_Header_CONTENT_TYPE),
+                        "text/plain",
+                    },
+                    {
+                        LibHTTPC_dumpHeader(LibHTTPC_Header_CONTENT_LENGTH),
+                        length,
+                    }
+                },
+                .header_count = 2,
+                .body = (method == LibHTTPC_Method_GET) ? CPTC_root : NULL,
+            },
+            raw_response,
+            sizeof(raw_response)
+        );
+
+        send(fd, raw_response, strlen(raw_response), 0);
         return;
     }
 
-    if (strchr(path, '.') && isnumber(path + 1))
+    if (strchr(request.uri, '.') && isnumber(request.uri + 1))
     {
-        char *length = malloc(sizeof(*length) * 32);
+        char length[20];
 
-        *strchr(path, '.') = '\0';
+        *strchr(request.uri, '.') = '\0';
         generate_filename(filenamebuf, sizeof(filenamebuf), "png", n);
-        char *in = CPTC_downloadAvatar(atoll(path + 1), filenamebuf);
+        char *in = CPTC_downloadAvatar(atoll(request.uri + 1), filenamebuf);
         if (!in)
         {
-            strcpy(response, "HTTP/1.0 403 Forbidden\r\n");
-            strcat(response, "\r\n");
-            send(fd, response, strlen(response), 0);
+            LibHTTPC_dumpResponse(
+                &(struct LibHTTPC_Response){.status = LibHTTPC_Status_FORBIDDEN},
+                raw_response,
+                sizeof(raw_response)
+            );
+            send(fd, raw_response, strlen(raw_response), 0);
             return;
         }
         generate_filename(filenamebuf, sizeof(filenamebuf), "gif", n);
@@ -100,38 +120,56 @@ void CPTC_requestHandler(int fd, int n)
         if (!fp)
         {
             perror("fopen()");
-            strcpy(response, "HTTP/1.0 500 Internal server error\r\n");
-            strcat(response, "\r\n");
-            send(fd, response, strlen(response), 0);
+            LibHTTPC_dumpResponse(
+                &(struct LibHTTPC_Response){.status = LibHTTPC_Status_INTERNAL_SERVER_ERROR},
+                raw_response,
+                sizeof(raw_response)
+            );
+            send(fd, raw_response, strlen(raw_response), 0);
 
             goto gif_end;
         }
         fseek(fp, 0, SEEK_END);
-        snprintf(length, 32, "Content-Lnegth: %ld\r\n", ftell(fp));
+        snprintf(length, sizeof(length), "%ld", ftell(fp));
         fseek(fp, 0, SEEK_SET);
 
-        strcpy(response, "HTTP/1.0 200 OK\r\n");
-        strcat(response, "Content-Type: image/gif\r\n");
-        strcat(response, length);
-        strcat(response, "\r\n");
-        send(fd, response, strlen(response), 0);
-        if (method == CPTC_GET)
+        LibHTTPC_dumpResponse(
+            &(struct LibHTTPC_Response)
+            {
+                .headers = (struct LibHTTPC_Header[])
+                {
+                    {
+                        LibHTTPC_dumpHeader(LibHTTPC_Header_CONTENT_TYPE),
+                        "image/gif",
+                    },
+                    {
+                        LibHTTPC_dumpHeader(LibHTTPC_Header_CONTENT_LENGTH),
+                        length,
+                    }
+                },
+                .header_count = 2,
+            },
+            raw_response,
+            sizeof(raw_response)
+        );
+        send(fd, raw_response, strlen(raw_response), 0);
+        if (method == LibHTTPC_Method_GET)
         {
-            responseadd = response;
+            responseadd = raw_response;
             while ((ch = getc(fp)) >= 0)
             {
                 *responseadd++ = ch;
-                if (responseadd == response + sizeof(response))
+                if (responseadd == raw_response + sizeof(raw_response))
                 {
-                    if (send(fd, response, sizeof(response), 0) < 0)
+                    if (send(fd, raw_response, sizeof(raw_response), 0) < 0)
                     {
                         perror("send()");
                         goto gif_end;
                     }
-                    responseadd = response;
+                    responseadd = raw_response;
                 }
             }
-            send(fd, response, responseadd - response, 0);
+            send(fd, raw_response, responseadd - raw_response, 0);
         }
 
 gif_end:
@@ -142,11 +180,13 @@ gif_end:
         remove(filenamebuf);
 
         free(in);
-        free(length);
         return;
     }
 
-    strcpy(response, "HTTP/1.0 404 Not found");
-    strcat(response, "\r\n");
-    send(fd, response, strlen(response), 0);
+    LibHTTPC_dumpResponse(
+        &(struct LibHTTPC_Response){.status=LibHTTPC_Status_NOT_FOUND},
+        raw_response,
+        sizeof(raw_response)
+    );
+    send(fd, raw_response, strlen(raw_response), 0);
 }

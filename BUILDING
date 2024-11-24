@@ -2,4 +2,5 @@ Building is performed through a Makefile
 
 CPTC depends on:
 - cpetpet: https://github.com/nakidai/cpetpet
+- libhttpc: https://github.com/nakidai/libhttpc
 - curl: https://curl.se/

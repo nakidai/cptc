@@ -10,6 +10,7 @@ CFLAGS += -std=c11
 LDLIBS += $(shell curl-config --libs)
 LDLIBS += -lcurl
 LDLIBS += -lcpetpet
+LDLIBS += -lhttpc
 RM = rm -f
 
 all: cptc
