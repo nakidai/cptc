@@ -13,7 +13,10 @@
 #include <sys/types.h>
 
 #include <cpetpet.h>
-#include <libhttpc.h>
+#include <libhttpc/libhttpc.h>
+#ifndef  LibHTTPC_SOCK
+#error LibHTTPC should be built with support of sockets for this project
+#endif
 
 
 static bool isnumber(const char *s)
