@@ -68,8 +68,7 @@ void CPTC_requestHandler(int fd, int n)
     if (method != LibHTTPC_Method_GET && method != LibHTTPC_Method_HEAD)
     {
         res = LibHTTPC_writeResponse(
-            fd,
-            &(struct LibHTTPC_Response){.status = LibHTTPC_Status_NOT_IMPLEMENTED}
+            fd, &(struct LibHTTPC_Response){.status = LibHTTPC_Status_NOT_IMPLEMENTED}
         );
         if (res)
             perror("send()");
