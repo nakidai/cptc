@@ -37,13 +37,13 @@ static char *generate_filename(char *buf, size_t size, const char *ext, int n)
 
 void CPTC_requestHandler(int fd, int n)
 {
-    int ch;
+    int ch, res;
     char chbuf;
     char raw_request[512];
     char filenamebuf[64];
     char raw_response[512], *responseadd = raw_response;
     ssize_t received = recv(fd, raw_request, sizeof(raw_request), 0);
-    FILE *fp;
+    FILE *fp = NULL;
 
     enum LibHTTPC_Method method;
     struct LibHTTPC_Request request = {0};
@@ -54,17 +54,25 @@ void CPTC_requestHandler(int fd, int n)
         return;
     }
 
-    LibHTTPC_loadRequest(&request, raw_request);
+    if (LibHTTPC_loadRequest(&request, raw_request) == NULL)
+    {
+        res = LibHTTPC_writeResponse(
+            fd, &(struct LibHTTPC_Response){.status = LibHTTPC_Status_BAD_REQUEST}
+        );
+        if (res)
+            perror("send()");
+        return;
+    }
 
     method = LibHTTPC_loadMethod(request.method);
     if (method != LibHTTPC_Method_GET && method != LibHTTPC_Method_HEAD)
     {
-        LibHTTPC_dumpResponse(
-            &(struct LibHTTPC_Response){.status = LibHTTPC_Status_NOT_IMPLEMENTED},
-            raw_response,
-            sizeof(raw_response)
+        res = LibHTTPC_writeResponse(
+            fd,
+            &(struct LibHTTPC_Response){.status = LibHTTPC_Status_NOT_IMPLEMENTED}
         );
-        send(fd, raw_response, strlen(raw_response), 0);
+        if (res)
+            perror("send()");
         return;
     }
 
@@ -73,7 +81,8 @@ void CPTC_requestHandler(int fd, int n)
         char length[20];
         snprintf(length, sizeof(length), "%ld", strlen(CPTC_root));
 
-        LibHTTPC_dumpResponse(
+        res = LibHTTPC_writeResponse(
+            fd,
             &(struct LibHTTPC_Response)
             {
                 .headers = (struct LibHTTPC_Header[])
@@ -89,12 +98,10 @@ void CPTC_requestHandler(int fd, int n)
                 },
                 .header_count = 2,
                 .body = (method == LibHTTPC_Method_GET) ? CPTC_root : NULL,
-            },
-            raw_response,
-            sizeof(raw_response)
+            }
         );
-
-        send(fd, raw_response, strlen(raw_response), 0);
+        if (res)
+            perror("send()");
         return;
     }
 
@@ -107,12 +114,11 @@ void CPTC_requestHandler(int fd, int n)
         char *in = CPTC_downloadAvatar(atoll(request.uri + 1), filenamebuf);
         if (!in)
         {
-            LibHTTPC_dumpResponse(
-                &(struct LibHTTPC_Response){.status = LibHTTPC_Status_FORBIDDEN},
-                raw_response,
-                sizeof(raw_response)
+            res = LibHTTPC_writeResponse(
+                fd, &(struct LibHTTPC_Response){.status = LibHTTPC_Status_FORBIDDEN}
             );
-            send(fd, raw_response, strlen(raw_response), 0);
+            if (res)
+                perror("send()");
             return;
         }
         generate_filename(filenamebuf, sizeof(filenamebuf), "gif", n);
@@ -123,20 +129,19 @@ void CPTC_requestHandler(int fd, int n)
         if (!fp)
         {
             perror("fopen()");
-            LibHTTPC_dumpResponse(
-                &(struct LibHTTPC_Response){.status = LibHTTPC_Status_INTERNAL_SERVER_ERROR},
-                raw_response,
-                sizeof(raw_response)
+            res = LibHTTPC_writeResponse(
+                fd, &(struct LibHTTPC_Response){.status = LibHTTPC_Status_INTERNAL_SERVER_ERROR}
             );
-            send(fd, raw_response, strlen(raw_response), 0);
-
+            if (res)
+                perror("send()");
             goto gif_end;
         }
         fseek(fp, 0, SEEK_END);
         snprintf(length, sizeof(length), "%ld", ftell(fp));
         fseek(fp, 0, SEEK_SET);
 
-        LibHTTPC_dumpResponse(
+        res = LibHTTPC_writeResponse(
+            fd,
             &(struct LibHTTPC_Response)
             {
                 .headers = (struct LibHTTPC_Header[])
@@ -151,11 +156,13 @@ void CPTC_requestHandler(int fd, int n)
                     }
                 },
                 .header_count = 2,
-            },
-            raw_response,
-            sizeof(raw_response)
+            }
         );
-        send(fd, raw_response, strlen(raw_response), 0);
+        if (res)
+        {
+            perror("send()");
+            goto gif_end;
+        }
         if (method == LibHTTPC_Method_GET)
         {
             responseadd = raw_response;
@@ -186,10 +193,9 @@ gif_end:
         return;
     }
 
-    LibHTTPC_dumpResponse(
-        &(struct LibHTTPC_Response){.status=LibHTTPC_Status_NOT_FOUND},
-        raw_response,
-        sizeof(raw_response)
+    res = LibHTTPC_writeResponse(
+        fd, &(struct LibHTTPC_Response){.status=LibHTTPC_Status_NOT_FOUND}
     );
-    send(fd, raw_response, strlen(raw_response), 0);
+    if (res)
+        perror("send()");
 }
