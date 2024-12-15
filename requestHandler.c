@@ -2,6 +2,7 @@
 
 #include "cptc.h"
 
+#include <errno.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -42,25 +43,25 @@ void CPTC_requestHandler(int fd, int n)
     char raw_request[512];
     char filenamebuf[64];
     char raw_response[512], *responseadd = raw_response;
-    ssize_t received = recv(fd, raw_request, sizeof(raw_request), 0);
     FILE *fp = NULL;
 
     enum LibHTTPC_Method method;
     struct LibHTTPC_Request request = {0};
 
-    if (received == -1)
+    if (LibHTTPC_readRequest(fd, &request, raw_request, sizeof(raw_request)) == NULL)
     {
-        perror("recv()");
-        return;
-    }
-
-    if (LibHTTPC_loadRequest(&request, raw_request) == NULL)
-    {
-        res = LibHTTPC_writeResponse(
-            fd, &(struct LibHTTPC_Response){.status = LibHTTPC_Status_BAD_REQUEST}
-        );
-        if (res)
-            perror("send()");
+        if (errno)
+        {
+            perror("recv()");
+        }
+        else
+        {
+            res = LibHTTPC_writeResponse(
+                fd, &(struct LibHTTPC_Response){.status = LibHTTPC_Status_BAD_REQUEST}
+            );
+            if (res)
+                perror("send()");
+        }
         return;
     }
 
