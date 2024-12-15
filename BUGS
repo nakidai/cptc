@@ -1,1 +1,0 @@
-- Broken pipe during request causes SIGSEGV after exiting thread
