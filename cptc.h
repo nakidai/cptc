@@ -30,8 +30,9 @@ extern const char *CPTC_root;
  * Starts CPTC server
  * @param address Adress to bind
  * @param port Port to bind
+ * @param id Worker ID
  */
-void CPTC(const char *address, in_port_t port);
+void CPTC(const char *address, in_port_t port, unsigned id);
 
 /**
  * Handles request

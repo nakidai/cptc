@@ -20,6 +20,7 @@ static struct option long_options[] =
     {"help", 0, NULL, 'h'},
     {"host", 1, NULL, 'i'},
     {"port", 1, NULL, 'p'},
+    {"id",   1, NULL, 'w'},
     {0}
 };
 
@@ -35,6 +36,7 @@ noreturn void usage(char *name, bool full)
             "  -h, --help        show this help message and quit\n"
             "  -i, --host IP     set bind address to IP )default: 127.0.0.1)\n"
             "  -p, --port PORT   set bind port to PORT (default: 8080)\n"
+            "  -w, --id   ID     set worker id to ID (default: 0)\n"
             "Environment variables:\n"
             "  CPTC_TOKEN=TOKEN  Discord bot's TOKEN\n"
         :
@@ -56,9 +58,10 @@ int main(int argc, char **argv)
 {
     char *address = "127.0.0.1";
     int port = 8080;
+    unsigned id = 0;
     int ch;
 
-    while ((ch = getopt_long(argc, argv, "hi:p:", long_options, NULL)) != EOF)
+    while ((ch = getopt_long(argc, argv, "hi:p:w:", long_options, NULL)) != EOF)
     {
         switch (ch)
         {
@@ -72,6 +75,14 @@ int main(int argc, char **argv)
                 usage(argv[0], false);
             }
             port = atoi(optarg);
+            break;
+        case 'w':
+            if (!isnumber(optarg))
+            {
+                fprintf(stderr, "%s: id should be an unsigned integer\n", argv[0]);
+                usage(argv[0], false);
+            }
+            id = atoi(optarg);
             break;
         case 'h':
             usage(argv[0], true);
@@ -88,5 +99,5 @@ int main(int argc, char **argv)
         usage(argv[0], false);
     }
 
-    CPTC(address, port);
+    CPTC(address, port, id);
 }
