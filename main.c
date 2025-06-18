@@ -3,6 +3,7 @@
 #include "cptc.h"
 
 #include <ctype.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,5 +100,6 @@ int main(int argc, char **argv)
         usage(argv[0], false);
     }
 
+    signal(SIGPIPE, SIG_IGN);
     CPTC(address, port, id);
 }
